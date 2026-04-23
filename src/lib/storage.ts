@@ -23,9 +23,16 @@ export type DailyChecklist = {
   evitouGasto: boolean;
 };
 
+export type Challenge = {
+  title: string;
+  desc: string;
+};
+
 export type ChallengeProgress = {
   startedAt?: string; // yyyy-mm-dd
   completed: number[]; // indices de dias completados (0..6)
+  challenges?: Challenge[];
+  cycle?: number;
 };
 
 const DEPOSITS_KEY = "meta10k.deposits";

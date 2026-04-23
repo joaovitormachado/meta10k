@@ -2,15 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const FALLBACK_URL = "https://mzidilhgtjmjkcvfeghl.supabase.co";
-const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16aWRpbGhndGptamtjdmZlZ2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDU0NjEsImV4cCI6MjA5MjQ4MTQ2MX0.M4V8uRPEKSUkgL-1q4d1ffdjzqEyPMxpiIl2wMLIeg0";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || "";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || FALLBACK_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || FALLBACK_ANON_KEY;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY não estão configurados nas variáveis de ambiente!");
+}
 
 export const supabase = createClient<Database>(
-  SUPABASE_URL, 
-  SUPABASE_ANON_KEY, 
+  SUPABASE_URL || "https://placeholder.supabase.co", 
+  SUPABASE_ANON_KEY || "placeholder", 
+
   {
     auth: {
       storage: localStorage,

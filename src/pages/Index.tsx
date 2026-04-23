@@ -62,13 +62,13 @@ import {
   Settings2,
   Loader2,
 } from "lucide-react";
-import type { Deposit } from "@/lib/storage";
+import type { Deposit, DepositSource } from "@/lib/storage";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const { profile, user, signOut, isAdmin } = useAuth();
+  const { profile, user, signOut, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -78,9 +78,9 @@ const Index = () => {
 
   // Goal editor dialog
   const [goalEditOpen, setGoalEditOpen] = useState(false);
-  const [editTotal, setEditTotal] = useState("10000");
-  const [editMonthly, setEditMonthly] = useState("500");
-  const [editMonths, setEditMonths] = useState("10");
+  const [editTotal, setEditTotal] = useState("");
+  const [editMonthly, setEditMonthly] = useState("");
+  const [editMonths, setEditMonths] = useState("12");
 
   const handleLogout = async () => {
     await signOut();
@@ -88,29 +88,18 @@ const Index = () => {
     toast.success("Até logo! 👋");
   };
 
+  // CORE DATA - ABSOLUTELY REAL DATA ONLY
+  const goalTotal = Number(profile?.goal_target_value);
+  const goalName = profile?.goal_name || "";
+  const goalImage = profile?.goal_image_url || "";
+  const deadlineMonths = goal?.deadline_months ? Number(goal.deadline_months) : 12;
+  const goalMonthly = goalTotal / deadlineMonths;
   const displayName = profile?.name || user?.email?.split("@")[0] || (isAdmin ? "Administrador" : "");
-  const goalName = profile?.goal_name || "Seu objetivo";
-  const goalImage = profile?.goal_image || "";
 
   // Initial load
   useEffect(() => {
-    if (!user) return;
-    if (isAdmin) {
-      setGoal({
-        id: "admin-placeholder",
-        user_id: user.id,
-        goal_total: 10000,
-        goal_monthly: 1000,
-        deadline_months: 10,
-        amount_saved: 0,
-        amount_remaining: 10000,
-        progress_percent: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      setLoading(false);
-      return;
-    }
+    if (!user || authLoading) return;
+    
     let active = true;
     (async () => {
       try {
@@ -121,16 +110,16 @@ const Index = () => {
           fetchCurrentWeekChecklist(user.id),
         ]);
         if (!active) return;
+
         setGoal(g);
         setContributions(c);
         setChecklist(wc);
-        if (g) {
-          setEditTotal(String(g.goal_total));
-          setEditMonthly(String(g.goal_monthly));
-          setEditMonths(String(g.deadline_months || 10));
-        }
+        
+        // Sync editor with profile data
+        setEditTotal(String(goalTotal));
+        setEditMonths(String(g?.deadline_months || 12));
       } catch (e: any) {
-        toast.error(e.message ?? "Erro ao carregar dados");
+        if (!isAdmin) toast.error("Erro ao carregar dados");
       } finally {
         if (active) setLoading(false);
       }
@@ -138,9 +127,9 @@ const Index = () => {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, isAdmin, authLoading, goalTotal]);
 
-  // Map DB contributions → UI Deposit shape (minimize changes in child components)
+  // Map DB contributions → UI Deposit shape
   const deposits: Deposit[] = useMemo(
     () =>
       contributions.map((c) => ({
@@ -152,11 +141,9 @@ const Index = () => {
     [contributions],
   );
 
-  const saved = goal ? Number(goal.amount_saved) : 0;
-  const goalTotal = goal ? Number(goal.goal_total) : 10000;
-  const deadlineMonths = goal?.deadline_months ? Number(goal.deadline_months) : 10;
-  const goalMonthly = goalTotal / deadlineMonths;
-
+  // Goal calculations
+  const saved = (contributions ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
+  
   const stats = useMemo(() => {
     const remaining = Math.max(0, goalTotal - saved);
     const today = new Date();
@@ -165,7 +152,7 @@ const Index = () => {
       : today;
     const daysSinceStart = Math.max(
       1,
-      Math.floor((today.getTime() - oldest.getTime() / 86400000) + 1),
+      Math.floor((today.getTime() - oldest.getTime()) / 86400000) + 1,
     );
     const dailyAvg = saved / daysSinceStart;
 
@@ -178,18 +165,6 @@ const Index = () => {
     const dailyTarget = goalMonthly / 30;
     const weeklyTarget = goalMonthly / 4;
 
-    const projectionDays = dailyAvg > 0 ? Math.ceil(remaining / dailyAvg) : 0;
-    const projectedDate =
-      dailyAvg > 0 ? new Date(today.getTime() + projectionDays * 86400000) : null;
-
-    const dateSet = new Set(deposits.map((d) => d.date));
-    let streak = 0;
-    const cursor = new Date();
-    while (dateSet.has(cursor.toISOString().slice(0, 10))) {
-      streak++;
-      cursor.setDate(cursor.getDate() - 1);
-    }
-
     const monthsLeft = goalMonthly > 0 ? Math.ceil(remaining / goalMonthly) : 0;
 
     return {
@@ -198,31 +173,43 @@ const Index = () => {
       dailyTarget,
       weeklyTarget,
       monthlyTarget: goalMonthly,
-      projectedDate,
-      streak,
       dailyAvg,
       weeklyProgress,
       daysSinceStart,
     };
-  }, [contributions, deposits, saved, goalTotal, goalMonthly]);
+  }, [contributions, saved, goalTotal, goalMonthly]);
 
-  const addDeposit = async (
-    amount: number,
-    _note: string,
-    date: string,
-    source: "salario" | "renda_extra" | "venda" | "outro",
-  ) => {
+  const saveGoalConfig = async () => {
+    if (!user || isAdmin) return;
+    const t = parseFloat(editTotal.replace(",", "."));
+    const m = parseInt(editMonths);
+    if (!t || t <= 0) return toast.error("Meta total inválida");
+    const monthly = t / m;
+    try {
+      const updated = await recomputeAndSaveGoal(user.id, t, monthly, m);
+      
+      await supabase
+        .from("profiles")
+        .update({ goal_target_value: t })
+        .eq("id", user.id);
+
+      setGoal(updated);
+      setGoalEditOpen(false);
+      toast.success("Meta atualizada ✅");
+    } catch (e: any) {
+      toast.error("Erro ao salvar meta");
+    }
+  };
+
+  const addDeposit = async (amount: number, _note: string, date: string, source: DepositSource) => {
     if (!user || isAdmin) return;
     try {
       const created = await insertContribution(user.id, amount, sourceToDb[source], date);
-      const next = [created, ...contributions].sort((a, b) =>
-        b.date.localeCompare(a.date),
-      );
-      setContributions(next);
-      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalTotal / deadlineMonths, deadlineMonths);
+      setContributions(prev => [created, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalMonthly, deadlineMonths);
       setGoal(updated);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao salvar aporte");
+      toast.error("Erro ao salvar aporte");
     }
   };
 
@@ -231,42 +218,22 @@ const Index = () => {
     try {
       await deleteContribution(id);
       setContributions((prev) => prev.filter((c) => c.id !== id));
-      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalTotal / deadlineMonths, deadlineMonths);
+      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalMonthly, deadlineMonths);
       setGoal(updated);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao remover");
+      toast.error("Erro ao remover");
     }
   };
 
-  const saveGoalConfig = async () => {
-    if (!user || isAdmin) return;
-    const t = parseFloat(editTotal.replace(",", "."));
-    const m = parseInt(editMonths);
-    if (!t || t <= 0) return toast.error("Meta total inválida");
-    if (!m || m <= 0) return toast.error("Prazo inválido");
-    const monthly = t / m;
-    try {
-      const updated = await recomputeAndSaveGoal(user.id, t, monthly, m);
-      setGoal(updated);
-      setGoalEditOpen(false);
-      toast.success("Meta atualizada ✅");
-    } catch (e: any) {
-      toast.error(e.message ?? "Erro ao salvar meta");
-    }
-  };
-
-  const toggleChecklist = async (
-    key: keyof WeeklyChecklistState,
-  ) => {
+  const toggleChecklist = async (key: keyof WeeklyChecklistState) => {
     if (!user || isAdmin) return;
     const current: WeeklyChecklistState = {
       saved_money: checklist?.saved_money ?? false,
       extra_income: checklist?.extra_income ?? false,
-      avoided_unnecessary_expense:
-        checklist?.avoided_unnecessary_expense ?? false,
+      avoided_unnecessary_expense: checklist?.avoided_unnecessary_expense ?? false,
     };
     const next = { ...current, [key]: !current[key] };
-    // Optimistic
+    
     setChecklist((prev) => ({
       ...(prev ?? {
         id: "tmp",
@@ -277,45 +244,39 @@ const Index = () => {
       }),
       ...next,
     }) as WeeklyChecklistRow);
+
     try {
       const saved = await upsertWeeklyChecklist(user.id, next);
       setChecklist(saved);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao salvar checklist");
+      toast.error("Erro ao salvar checklist");
     }
   };
 
   const resetAll = async () => {
     if (!user || isAdmin) return;
     try {
-      const ids = contributions.map((c) => c.id);
-      if (ids.length) {
-        const { error } = await supabase
-          .from("contributions")
-          .delete()
-          .in("id", ids);
-        if (error) throw error;
-      }
+      await supabase.from("contributions").delete().eq("user_id", user.id);
       setContributions([]);
       const updated = await upsertGoal(user.id, {
-        goal_total: 10000,
-        goal_monthly: 1000,
-        deadline_months: 10,
+        goal_total: 0,
+        goal_monthly: 0,
+        deadline_months: 12,
         amount_saved: 0,
-        amount_remaining: 10000,
+        amount_remaining: 0,
         progress_percent: 0,
       });
       setGoal(updated);
-      setEditTotal("10000");
-      setEditMonthly("1000");
-      setEditMonths("10");
-      toast.success("Tudo zerado! Bora recomeçar 🚀");
+      setEditTotal("0");
+      setEditMonthly("0");
+      toast.success("Tudo zerado!");
+      window.location.reload(); // Force refresh to re-gate
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao resetar");
+      toast.error("Erro ao resetar");
     }
   };
 
-  if (loading || !goal) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -343,7 +304,7 @@ const Index = () => {
                 Sistema 10K
               </h1>
               <p className="text-[11px] text-muted-foreground">
-                {displayName ? `Olá, ${displayName}` : `Sua jornada até ${formatBRL(goalTotal)}`}
+                {displayName ? `Olá, ${displayName}` : `Sua jornada`}
               </p>
             </div>
           </div>
@@ -372,8 +333,7 @@ const Index = () => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Resetar tudo?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Remove todos os seus aportes e restaura a meta padrão de R$ 10.000.
-                    Não dá pra desfazer.
+                    Remove todos os seus aportes e sua meta atual.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -416,7 +376,7 @@ const Index = () => {
         </section>
 
         {/* ALERTAS INTELIGENTES */}
-        {saved > 0 && !isAdmin && (
+        {!isAdmin && (
           <SmartAlerts
             saved={saved}
             goal={goalTotal}
@@ -429,7 +389,7 @@ const Index = () => {
         )}
 
         {/* SUGESTOES INTELIGENTES */}
-        {saved > 0 && !isAdmin && (
+        {!isAdmin && (
           <SmartSuggestions
             saved={saved}
             goal={goalTotal}
@@ -440,7 +400,7 @@ const Index = () => {
         )}
 
         {/* NÍVEIS */}
-        <LevelsTrack saved={saved} goal={goalTotal} />
+        <LevelsTrack saved={saved} goal={goalTotal} goalName={goalName} />
 
         {/* STATS */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
@@ -474,11 +434,6 @@ const Index = () => {
             value={`${stats.streak} ${stats.streak === 1 ? "dia" : "dias"}`}
             icon={Flame}
             accent="gold"
-            hint={
-              stats.projectedDate
-                ? `meta em ${stats.projectedDate.toLocaleDateString("pt-BR")}`
-                : "no ritmo atual"
-            }
           />
         </section>
 
@@ -499,10 +454,6 @@ const Index = () => {
           <EvolutionChart deposits={deposits} goal={goalTotal} />
           <DepositList deposits={deposits} onRemove={removeDeposit} />
         </section>
-
-        <footer className="text-center text-xs text-muted-foreground pt-4 pb-8">
-          Seus dados ficam salvos com segurança na sua conta. Cada aporte conta 💪
-        </footer>
       </main>
 
       {/* Goal edit dialog */}
@@ -528,13 +479,7 @@ const Index = () => {
                 inputMode="numeric"
                 value={editMonths}
                 onChange={(e) => setEditMonths(e.target.value)}
-                placeholder="Ex: 10"
               />
-            </div>
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                Guardando <span className="font-bold text-foreground">{formatBRL(parseFloat(editTotal || "0") / parseInt(editMonths || "1") || 0)}</span> por mês, você atingirá sua meta em <span className="font-bold text-foreground">{editMonths || "0"}</span> meses.
-              </p>
             </div>
           </div>
           <DialogFooter>

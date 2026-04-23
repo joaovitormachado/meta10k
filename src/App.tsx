@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import OnboardingGate from "@/components/OnboardingGate";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import Signup from "./pages/Signup.tsx";
@@ -44,7 +45,9 @@ const App = () => (
               path="/"
               element={
                 <ProtectedRoute>
-                  <Index />
+                  <OnboardingGate>
+                    <Index />
+                  </OnboardingGate>
                 </ProtectedRoute>
               }
             />

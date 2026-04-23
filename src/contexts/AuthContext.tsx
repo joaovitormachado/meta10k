@@ -8,6 +8,9 @@ interface Profile {
   email: string | null;
   goal_name: string | null;
   goal_image: string | null;
+  goal_target_value: number | null;
+  goal_image_url: string | null;
+  goal_type: string | null;
 }
 
 interface AuthContextValue {
@@ -45,25 +48,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           aud: "authenticated",
           created_at: new Date().toISOString(),
         } as User);
+
+        // Fetch profile for admin
+        supabase
+          .from("profiles")
+          .select("id, name, email, goal_name, goal_image, goal_target_value, goal_image_url, goal_type")
+          .ilike("email", adminData.email)
+          .maybeSingle()
+          .then(({ data }) => {
+            setProfile(data);
+            setLoading(false);
+          });
       } else {
         setIsAdmin(false);
+        setLoading(false);
       }
-      setLoading(false);
       return;
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      
       if (newSession?.user) {
+        // Fetch user profile
         supabase
           .from("profiles")
-          .select("id, name, email, goal_name, goal_image")
+          .select("id, name, email, goal_name, goal_image, goal_target_value, goal_image_url, goal_type")
           .eq("id", newSession.user.id)
           .maybeSingle()
-          .then(({ data }) => setProfile(data));
+          .then(({ data }) => {
+            setProfile(data);
+            setLoading(false);
+          });
       } else {
         setProfile(null);
+        setLoading(false);
       }
     });
 
@@ -73,12 +93,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (s?.user) {
         supabase
           .from("profiles")
-          .select("id, name, email, goal_name, goal_image")
+          .select("id, name, email, goal_name, goal_image, goal_target_value, goal_image_url, goal_type")
           .eq("id", s.user.id)
           .maybeSingle()
-          .then(({ data }) => setProfile(data));
+          .then(({ data }) => {
+            setProfile(data);
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -95,7 +119,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setIsAdmin(true);
     setUser(adminUser);
-    setLoading(false);
     localStorage.setItem(MASTER_ADMIN_KEY, JSON.stringify({ email }));
   };
 

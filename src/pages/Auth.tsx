@@ -78,7 +78,7 @@ const Auth = () => {
           </div>
           <div>
             <h1 className="font-display text-2xl font-extrabold">Sistema Primeiros 10K</h1>
-            <p className="text-sm text-muted-foreground">Sua jornada até R$ 10.000</p>
+            <p className="text-sm text-muted-foreground">Sua jornada até seu objetivo</p>
           </div>
         </div>
 

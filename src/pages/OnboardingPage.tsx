@@ -18,7 +18,7 @@ const OnboardingPage = () => {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("goal_name")
+          .select("goal_name, goal_target_value")
           .eq("id", user.id)
           .single();
         
@@ -26,7 +26,9 @@ const OnboardingPage = () => {
           throw error;
         }
         
-        if (!data?.goal_name) {
+        const hasGoal = !!(data?.goal_name && data?.goal_target_value && Number(data.goal_target_value) > 0);
+
+        if (!hasGoal) {
           setNeedsOnboarding(true);
         } else {
           navigate("/", { replace: true });

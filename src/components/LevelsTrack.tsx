@@ -5,28 +5,39 @@ import { Check } from "lucide-react";
 interface Props {
   saved: number;
   goal: number;
+  goalName?: string;
 }
 
-const LevelsTrack = ({ saved, goal }: Props) => {
-  const { next, scaled } = getCurrentLevel(saved, goal);
+const getPersonalizedLevels = (goal: number) => {
+  const percentages = [10, 25, 50, 75, 100];
+  return percentages.map((pct) => ({
+    value: (pct / 100) * goal,
+    label: pct === 100 ? "Conquista" : pct === 75 ? "Quase lá" : pct === 50 ? "Metade" : pct === 25 ? "Um quarto" : "Início",
+    emoji: pct === 100 ? "🏆" : pct === 75 ? "🔥" : pct === 50 ? "⚡" : pct === 25 ? "🌱" : "🌱"
+  }));
+};
+
+const LevelsTrack = ({ saved, goal, goalName }: Props) => {
+  const personalizedLevels = getPersonalizedLevels(goal);
+  const percentages = [10, 25, 50, 75, 100];
+  const nextPercent = percentages.find(p => (saved / goal) * 100 < p);
+  const nextValue = nextPercent ? (nextPercent / 100) * goal : null;
 
   return (
     <Card className="p-6 gradient-card shadow-soft border-border/60">
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div>
-          <h2 className="font-display text-xl font-bold">Seus níveis</h2>
+          <h2 className="font-display text-xl font-bold">Sua jornada</h2>
           <p className="text-xs text-muted-foreground">
-            {next
-              ? `Próximo: ${next.label} • ${formatBRL(next.value - saved)} restantes`
-              : "Você desbloqueou todos os níveis 🎉"}
+            {nextValue
+              ? `Próximo marco • ${formatBRL(nextValue - saved)} restantes`
+              : "Parabéns! Você conseguiu! 🎉"}
           </p>
         </div>
       </div>
 
       <div className="relative">
-        {/* Linha de fundo */}
         <div className="absolute top-5 left-0 right-0 h-1.5 bg-muted rounded-full" />
-        {/* Linha preenchida */}
         <div
           className="absolute top-5 left-0 h-1.5 gradient-primary rounded-full transition-all duration-700"
           style={{
@@ -35,7 +46,7 @@ const LevelsTrack = ({ saved, goal }: Props) => {
         />
 
         <ol className="relative grid grid-cols-5 gap-1">
-          {scaled.map((lvl, i) => {
+          {personalizedLevels.map((lvl, i) => {
             const reached = saved >= lvl.value;
             return (
               <li key={i} className="flex flex-col items-center text-center">
@@ -46,10 +57,10 @@ const LevelsTrack = ({ saved, goal }: Props) => {
                       : "bg-card border-border text-muted-foreground"
                   }`}
                 >
-                  {reached ? <Check className="w-5 h-5" /> : <span>{LEVELS[i].emoji}</span>}
+                  {reached ? <Check className="w-5 h-5" /> : <span>{lvl.emoji}</span>}
                 </div>
                 <p className={`mt-2 text-[11px] font-semibold leading-tight ${reached ? "text-foreground" : "text-muted-foreground"}`}>
-                  {LEVELS[i].label}
+                  {lvl.label}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   {formatBRL(lvl.value)}

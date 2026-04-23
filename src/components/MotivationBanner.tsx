@@ -5,7 +5,7 @@ const PHRASES = [
   "Você está mais perto do que imagina",
   "Consistência > perfeição",
   "Você já fez mais que a maioria",
-  "Cada R$ 1 te aproxima dos R$ 10.000",
+  "Cada R$ 1 te aproxima do seu objetivo",
   "Hoje é o melhor dia pra começar",
   "Pequenos passos, grandes resultados",
   "Disciplina vale mais que motivação",
@@ -33,7 +33,7 @@ const MotivationBanner = ({ saved, goal }: Props) => {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold leading-tight">{phrase}</p>
         <p className="text-xs text-muted-foreground">
-          Você já completou {pct.toFixed(1)}% da sua meta
+          Sua jornada até seu objetivo: Você já completou {pct.toFixed(1)}% da sua meta
         </p>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { PiggyBank, Target, Upload, Search, Sparkles, ArrowRight, Loader2, Camera } from "lucide-react";
+import { PiggyBank, Target, Upload, Search, Sparkles, ArrowRight, Loader2, Camera, Shield, Zap, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 interface OnboardingProps {
@@ -25,10 +25,18 @@ const COMMON_GOALS = [
   "Lua de mel",
 ];
 
+const GOAL_TYPES = [
+  { id: "liberdade", label: "Liberdade", icon: Sparkles, desc: "Independência e novas experiências" },
+  { id: "seguranca", label: "Segurança", icon: Shield, desc: "Tranquilidade para sua família" },
+  { id: "conforto", label: "Conforto", icon: Heart, desc: "Melhorar sua qualidade de vida" },
+  { id: "status", label: "Conquista", icon: Zap, desc: "Realizar um grande desejo pessoal" },
+];
+
 const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
   const [step, setStep] = useState(1);
   const [goalName, setGoalName] = useState("");
   const [goalValue, setGoalValue] = useState("");
+  const [goalType, setGoalType] = useState("");
   const [goalImage, setGoalImage] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,25 +46,11 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=5&orientation=landscape`,
-        {
-          headers: {
-            Authorization: "Client-ID YOUR_UNSPLASH_KEY",
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.results?.length > 0) {
-          setGoalImage(data.results[0].urls.regular);
-          toast.success("Imagem encontrada!");
-        } else {
-          toast.error("Nenhuma imagem encontrada. Tente outro termo.");
-        }
-      }
+      setGoalImage(`https://images.unsplash.com/photo-1500673922987-e212871fec22?q=80&w=1000&auto=format&fit=crop`);
+      setGoalImage(`https://source.unsplash.com/1600x900/?${encodeURIComponent(searchQuery)}`);
+      toast.success("Imagem selecionada!");
     } catch {
-      setGoalImage(`https://source.unsplash.com/800x400/?${encodeURIComponent(searchQuery)}`);
+      toast.error("Erro ao carregar imagem.");
     } finally {
       setSearching(false);
     }
@@ -76,61 +70,45 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
   const saveProfile = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
+      const numericValue = parseFloat(goalValue.replace(/\./g, "").replace(",", "."));
+      if (isNaN(numericValue)) throw new Error("Valor inválido");
+
+      const finalImage = goalImage || `https://source.unsplash.com/1600x900/?${encodeURIComponent(goalName)}`;
+      
+      // UPSERT Profile - ensures record exists and is updated
+      const { error: profileError } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: userId,
           goal_name: goalName,
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      if (goalImage) {
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve) => {
-          if (goalImage.startsWith("data:")) {
-            resolve(goalImage);
-          } else {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(goalImage);
-          }
+          goal_target_value: numericValue,
+          goal_type: goalType,
+          goal_image_url: finalImage,
+          updated_at: new Date().toISOString(),
         });
 
-        const fileName = `${userId}_goal_${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage
-          .from("goal-images")
-          .upload(fileName, fetch(base64).then(r => r.blob()), {
-            contentType: "image/jpeg",
-            upsert: true,
-          });
+      if (profileError) throw profileError;
 
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage
-            .from("goal-images")
-            .getPublicUrl(fileName);
-          
-          await supabase
-            .from("profiles")
-            .update({ goal_image: urlData.publicUrl })
-            .eq("id", userId);
-        }
-      }
-
-      await supabase
+      // UPSERT Goal - consistency for dashboard calculations
+      const { error: goalError } = await supabase
         .from("goals")
         .upsert({
           user_id: userId,
-          goal_total: parseFloat(goalValue.replace(",", ".")),
-          goal_monthly: parseFloat(goalValue.replace(",", ".")) / 10,
-          deadline_months: 10,
+          goal_total: numericValue,
+          goal_monthly: numericValue / 12,
+          deadline_months: 12,
           amount_saved: 0,
-          amount_remaining: parseFloat(goalValue.replace(",", ".")),
+          amount_remaining: numericValue,
           progress_percent: 0,
+          updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
+
+      if (goalError) throw goalError;
 
       toast.success("Seu sonho foi configurado! Vamos juntos 💪");
       onComplete();
     } catch (error: any) {
+      console.error("Error saving profile:", error);
       toast.error(error.message || "Erro ao salvar");
     } finally {
       setLoading(false);
@@ -143,28 +121,22 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
         <div className="bg-gradient-to-r from-primary via-primary/90 to-accent h-2" />
         
         <CardContent className="p-8 space-y-8">
-          {/* Header */}
           <div className="text-center space-y-2">
             <div className="mx-auto w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
               <Sparkles className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="font-display text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {step === 1 ? "Qual é o seu sonho?" : step === 2 ? "Quanto custa?" : "Como é esse sonho?"}
+              {step === 1 ? "Qual é o seu sonho?" : 
+               step === 2 ? "Quanto custa?" : 
+               step === 3 ? "O que esse sonho representa?" : 
+               "Visualize sua conquista"}
             </h1>
-            <p className="text-muted-foreground">
-              {step === 1 && "Pense no que você quer conquistar. Pode ser qualquer coisa!"}
-              {step === 2 && "Defina o valor necessário para realizar esse sonho"}
-              {step === 3 && "Uma imagem ajuda a manter o foco"}
-            </p>
           </div>
 
-          {/* Step 1: Goal Name */}
           {step === 1 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
               <div className="space-y-3">
-                <Label htmlFor="goal" className="text-lg font-medium">
-                  O que você quer conquistar?
-                </Label>
+                <Label htmlFor="goal" className="text-lg font-medium">O que você quer conquistar?</Label>
                 <Input
                   id="goal"
                   placeholder="Ex: Honda Civic Touring 2024"
@@ -177,13 +149,13 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">Ou escolha uma opção rápida:</p>
                 <div className="flex flex-wrap gap-2">
-                  {COMMON_GOALS.slice(0, 6).map((goal) => (
+                  {COMMON_GOALS.slice(0, 8).map((goal) => (
                     <button
                       key={goal}
                       onClick={() => setGoalName(goal)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                         goalName === goal
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-primary text-primary-foreground shadow-md"
                           : "bg-muted hover:bg-muted/80 text-muted-foreground"
                       }`}
                     >
@@ -203,13 +175,10 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
             </div>
           )}
 
-          {/* Step 2: Goal Value */}
           {step === 2 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
               <div className="space-y-3">
-                <Label htmlFor="value" className="text-lg font-medium">
-                  Qual o valor necessário?
-                </Label>
+                <Label htmlFor="value" className="text-lg font-medium">Qual o valor necessário?</Label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-muted-foreground">R$</span>
                   <Input
@@ -221,7 +190,7 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, "");
                       if (value) {
-                        setGoalValue((parseInt(value) / 100).toLocaleString("pt-BR"));
+                        setGoalValue(Number(parseInt(value) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }));
                       } else {
                         setGoalValue("");
                       }
@@ -231,25 +200,8 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-4 space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Target className="w-4 h-4 text-primary" />
-                  <span className="text-muted-foreground">Resumo:</span>
-                </div>
-                <p className="text-lg font-bold">{goalName}</p>
-                <p className="text-2xl font-extrabold text-primary">
-                  R$ {goalValue || "0"}
-                </p>
-              </div>
-
               <div className="flex gap-3">
-                <Button
-                  onClick={() => setStep(1)}
-                  variant="outline"
-                  className="flex-1 h-12"
-                >
-                  Voltar
-                </Button>
+                <Button onClick={() => setStep(1)} variant="outline" className="flex-1 h-12">Voltar</Button>
                 <Button
                   onClick={() => goalValue && setStep(3)}
                   className="flex-1 h-12 gradient-primary shadow-lg"
@@ -261,103 +213,95 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
             </div>
           )}
 
-          {/* Step 3: Image */}
           {step === 3 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
-              <div className="space-y-3">
-                <Label className="text-lg font-medium">
-                  Adicione uma imagem do seu sonho (opcional)
-                </Label>
-                
-                {goalImage ? (
-                  <div className="relative rounded-2xl overflow-hidden">
-                    <img
-                      src={goalImage}
-                      alt={goalName}
-                      className="w-full h-48 object-cover"
-                    />
-                    <Button
-                      onClick={() => setGoalImage("")}
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                    >
-                      Remover
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-2xl p-8 space-y-4">
-                    <div className="flex justify-center gap-4">
-                      <label className="flex flex-col items-center gap-2 cursor-pointer p-4 rounded-xl hover:bg-muted/50 transition-colors">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Upload className="w-6 h-6 text-primary" />
-                        </div>
-                        <span className="text-sm">Upload</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
-                      </label>
-
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                          <Search className="w-6 h-6 text-accent" />
-                        </div>
-                        <span className="text-sm">Buscar</span>
-                      </div>
+              <Label className="text-lg font-medium">Este objetivo trará mais...</Label>
+              <div className="grid grid-cols-1 gap-3">
+                {GOAL_TYPES.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => setGoalType(type.id)}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
+                      goalType === type.id
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-muted hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    <div className={`p-3 rounded-xl ${goalType === type.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                      <type.icon className="w-6 h-6" />
                     </div>
-
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Digite para buscar..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button onClick={searchImage} disabled={searching || !searchQuery}>
-                        {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Buscar"}
-                      </Button>
+                    <div>
+                      <p className="font-bold">{type.label}</p>
+                      <p className="text-sm text-muted-foreground">{type.desc}</p>
                     </div>
-                  </div>
-                )}
+                  </button>
+                ))}
               </div>
 
               <div className="flex gap-3">
+                <Button onClick={() => setStep(2)} variant="outline" className="flex-1 h-12">Voltar</Button>
                 <Button
-                  onClick={() => setStep(2)}
-                  variant="outline"
-                  className="flex-1 h-12"
-                >
-                  Voltar
-                </Button>
-                <Button
-                  onClick={saveProfile}
+                  onClick={() => goalType && setStep(4)}
                   className="flex-1 h-12 gradient-primary shadow-lg"
-                  disabled={loading}
+                  disabled={!goalType}
                 >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>Começar a jornada <Sparkles className="w-5 h-5 ml-2" /></>
-                  )}
+                  Continuar <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Progress */}
+          {step === 4 && (
+            <div className="space-y-6 animate-in slide-in-from-right duration-300">
+              <div className="space-y-3">
+                <Label className="text-lg font-medium">Visualize sua conquista</Label>
+                
+                {goalImage ? (
+                  <div className="relative rounded-2xl overflow-hidden shadow-inner bg-muted">
+                    <img src={goalImage} alt={goalName} className="w-full h-56 object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                       <p className="text-white font-bold text-lg">{goalName}</p>
+                       <Button onClick={() => setGoalImage("")} variant="destructive" size="sm">Trocar</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-2xl p-6 space-y-4 bg-muted/20">
+                    <div className="grid grid-cols-2 gap-4">
+                      <label className="flex flex-col items-center gap-2 cursor-pointer p-4 rounded-xl hover:bg-muted/50 transition-colors bg-card shadow-sm border">
+                        <Upload className="w-6 h-6 text-primary" />
+                        <span className="text-xs font-medium">Fazer Upload</span>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      </label>
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card shadow-sm border opacity-50 cursor-not-allowed">
+                        <Search className="w-6 h-6 text-accent" />
+                        <span className="text-xs font-medium">Buscar (Auto)</span>
+                      </div>
+                    </div>
+                    <p className="text-center text-xs text-muted-foreground italic">Dica: Uma imagem real ajuda seu cérebro a focar na meta!</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button onClick={() => setStep(3)} variant="outline" className="flex-1 h-12">Voltar</Button>
+                <Button
+                  onClick={saveProfile}
+                  className="flex-1 h-12 gradient-primary shadow-lg"
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Começar Jornada <Sparkles className="w-5 h-5 ml-2" /></>}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-center gap-2 pt-4">
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  s === step
-                    ? "bg-primary w-8"
-                    : s < step
-                    ? "bg-primary"
-                    : "bg-muted"
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                  s === step ? "bg-primary w-8" : s < step ? "bg-primary/60" : "bg-muted"
                 }`}
               />
             ))}

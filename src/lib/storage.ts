@@ -14,6 +14,9 @@ export type GoalConfig = {
   startDate: string;
   monthlyTarget?: number;
   income?: number;
+  goalName?: string;
+  goalImage?: string;
+  goalValue?: number;
 };
 
 export type DailyChecklist = {
@@ -42,7 +45,7 @@ const CHECKLIST_KEY = "meta10k.checklist";
 const CHALLENGE_KEY = "meta10k.challenge";
 
 export const defaultConfig = (): GoalConfig => ({
-  goal: 10000,
+  goal: 0,
   startDate: new Date().toISOString().slice(0, 10),
   deadline: new Date(new Date().setMonth(new Date().getMonth() + 10))
     .toISOString()
@@ -93,18 +96,18 @@ export const SOURCE_LABEL: Record<DepositSource, string> = {
   outro: "Outro",
 };
 
-// Marcos / Níveis
+// Marcos / Níveis (Percentage Based)
 export type Level = { value: number; label: string; emoji: string };
 export const LEVELS: Level[] = [
-  { value: 100, label: "Início", emoji: "🌱" },
-  { value: 500, label: "Saindo da média", emoji: "🚶" },
-  { value: 1000, label: "Primeiro marco", emoji: "🎯" },
-  { value: 5000, label: "Meio do caminho", emoji: "🔥" },
-  { value: 10000, label: "Meta final", emoji: "🏆" },
+  { value: 10, label: "Início", emoji: "🌱" },
+  { value: 25, label: "Um quarto", emoji: "🚶" },
+  { value: 50, label: "Metade", emoji: "🎯" },
+  { value: 75, label: "Quase lá", emoji: "🔥" },
+  { value: 100, label: "Conquista", emoji: "🏆" },
 ];
 
 export const getCurrentLevel = (saved: number, goal: number) => {
-  const scaled = LEVELS.map((l) => ({ ...l, value: (l.value / 10000) * goal }));
+  const scaled = LEVELS.map((l) => ({ ...l, value: (l.value / 100) * (goal || 1) }));
   let current = scaled[0];
   let next: typeof scaled[number] | null = scaled[0];
   for (const l of scaled) {

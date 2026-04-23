@@ -6,6 +6,8 @@ interface Profile {
   id: string;
   name: string | null;
   email: string | null;
+  goal_name: string | null;
+  goal_image: string | null;
 }
 
 interface AuthContextValue {
@@ -56,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (newSession?.user) {
         supabase
           .from("profiles")
-          .select("id, name, email")
+          .select("id, name, email, goal_name, goal_image")
           .eq("id", newSession.user.id)
           .maybeSingle()
           .then(({ data }) => setProfile(data));
@@ -71,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (s?.user) {
         supabase
           .from("profiles")
-          .select("id, name, email")
+          .select("id, name, email, goal_name, goal_image")
           .eq("id", s.user.id)
           .maybeSingle()
           .then(({ data }) => setProfile(data));

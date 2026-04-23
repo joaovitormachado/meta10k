@@ -16,7 +16,7 @@ import {
   sourceFromDb,
 } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
-import ProgressHero from "@/components/ProgressHero";
+import ProgressHeroPersonalized from "@/components/ProgressHeroPersonalized";
 import StatCard from "@/components/StatCard";
 import AddDepositDialog from "@/components/AddDepositDialog";
 import DepositList from "@/components/DepositList";
@@ -29,6 +29,7 @@ import Challenge7Days from "@/components/Challenge7Days";
 import EvolutionChart from "@/components/EvolutionChart";
 import MotivationBanner from "@/components/MotivationBanner";
 import FirstResults from "@/components/FirstResults";
+import { SmartAlerts, SmartSuggestions } from "@/components/SmartAlerts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -88,6 +89,8 @@ const Index = () => {
   };
 
   const displayName = profile?.name || user?.email?.split("@")[0] || (isAdmin ? "Administrador" : "");
+  const goalName = profile?.goal_name || "Seu objetivo";
+  const goalImage = profile?.goal_image || "";
 
   // Initial load
   useEffect(() => {
@@ -162,9 +165,15 @@ const Index = () => {
       : today;
     const daysSinceStart = Math.max(
       1,
-      Math.floor((today.getTime() - oldest.getTime()) / 86400000) + 1,
+      Math.floor((today.getTime() - oldest.getTime() / 86400000) + 1),
     );
     const dailyAvg = saved / daysSinceStart;
+
+    const thisWeekStart = new Date();
+    thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
+    const weeklyProgress = contributions
+      .filter(c => new Date(c.date) >= thisWeekStart)
+      .reduce((sum, c) => sum + Number(c.amount), 0);
 
     const dailyTarget = goalMonthly / 30;
     const weeklyTarget = goalMonthly / 4;
@@ -192,6 +201,8 @@ const Index = () => {
       projectedDate,
       streak,
       dailyAvg,
+      weeklyProgress,
+      daysSinceStart,
     };
   }, [contributions, deposits, saved, goalTotal, goalMonthly]);
 
@@ -390,12 +401,43 @@ const Index = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-6">
-        {/* HERO + AÇÃO */}
+        {/* HERO PERSONALIZADO */}
         <section className="space-y-4">
-          <ProgressHero saved={saved} goal={goalTotal} />
+          <ProgressHeroPersonalized
+            saved={saved}
+            goal={goalTotal}
+            goalName={goalName}
+            goalImage={goalImage}
+            goalMonthly={goalMonthly}
+            weeklyProgress={stats.weeklyProgress}
+            daysLeft={stats.monthsLeft}
+          />
           <AddDepositDialog onAdd={addDeposit} />
-          <MotivationBanner saved={saved} goal={goalTotal} />
         </section>
+
+        {/* ALERTAS INTELIGENTES */}
+        {saved > 0 && !isAdmin && (
+          <SmartAlerts
+            saved={saved}
+            goal={goalTotal}
+            goalMonthly={goalMonthly}
+            contributions={contributions.map(c => ({ amount: Number(c.amount), date: c.date }))}
+            daysSinceStart={stats.daysSinceStart}
+            dailyAvg={stats.dailyAvg}
+            monthsLeft={stats.monthsLeft}
+          />
+        )}
+
+        {/* SUGESTOES INTELIGENTES */}
+        {saved > 0 && !isAdmin && (
+          <SmartSuggestions
+            saved={saved}
+            goal={goalTotal}
+            goalMonthly={goalMonthly}
+            dailyAvg={stats.dailyAvg}
+            remaining={stats.remaining}
+          />
+        )}
 
         {/* NÍVEIS */}
         <LevelsTrack saved={saved} goal={goalTotal} />

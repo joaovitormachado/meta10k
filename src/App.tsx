@@ -12,6 +12,7 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import OnboardingPage from "./pages/OnboardingPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,10 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route
+              path="/onboarding"
+              element={<OnboardingPage />}
+            />
+            <Route
               path="/admin"
               element={
                 <ProtectedRoute>
@@ -43,7 +48,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

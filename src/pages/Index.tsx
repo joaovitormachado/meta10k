@@ -79,6 +79,7 @@ const Index = () => {
   const [goalEditOpen, setGoalEditOpen] = useState(false);
   const [editTotal, setEditTotal] = useState("10000");
   const [editMonthly, setEditMonthly] = useState("500");
+  const [editMonths, setEditMonths] = useState("10");
 
   const handleLogout = async () => {
     await signOut();
@@ -96,7 +97,8 @@ const Index = () => {
         id: "admin-placeholder",
         user_id: user.id,
         goal_total: 10000,
-        goal_monthly: 500,
+        goal_monthly: 1000,
+        deadline_months: 10,
         amount_saved: 0,
         amount_remaining: 10000,
         progress_percent: 0,
@@ -122,6 +124,7 @@ const Index = () => {
         if (g) {
           setEditTotal(String(g.goal_total));
           setEditMonthly(String(g.goal_monthly));
+          setEditMonths(String(g.deadline_months || 10));
         }
       } catch (e: any) {
         toast.error(e.message ?? "Erro ao carregar dados");
@@ -148,7 +151,8 @@ const Index = () => {
 
   const saved = goal ? Number(goal.amount_saved) : 0;
   const goalTotal = goal ? Number(goal.goal_total) : 10000;
-  const goalMonthly = goal ? Number(goal.goal_monthly) : 500;
+  const deadlineMonths = goal?.deadline_months ? Number(goal.deadline_months) : 10;
+  const goalMonthly = goalTotal / deadlineMonths;
 
   const stats = useMemo(() => {
     const remaining = Math.max(0, goalTotal - saved);
@@ -162,7 +166,6 @@ const Index = () => {
     );
     const dailyAvg = saved / daysSinceStart;
 
-    // ritmo necessário p/ meta mensal
     const dailyTarget = goalMonthly / 30;
     const weeklyTarget = goalMonthly / 4;
 
@@ -205,7 +208,7 @@ const Index = () => {
         b.date.localeCompare(a.date),
       );
       setContributions(next);
-      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalMonthly);
+      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalTotal / deadlineMonths, deadlineMonths);
       setGoal(updated);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao salvar aporte");
@@ -217,7 +220,7 @@ const Index = () => {
     try {
       await deleteContribution(id);
       setContributions((prev) => prev.filter((c) => c.id !== id));
-      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalMonthly);
+      const updated = await recomputeAndSaveGoal(user.id, goalTotal, goalTotal / deadlineMonths, deadlineMonths);
       setGoal(updated);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao remover");
@@ -227,11 +230,12 @@ const Index = () => {
   const saveGoalConfig = async () => {
     if (!user || isAdmin) return;
     const t = parseFloat(editTotal.replace(",", "."));
-    const m = parseFloat(editMonthly.replace(",", "."));
+    const m = parseInt(editMonths);
     if (!t || t <= 0) return toast.error("Meta total inválida");
-    if (!m || m <= 0) return toast.error("Meta mensal inválida");
+    if (!m || m <= 0) return toast.error("Prazo inválido");
+    const monthly = t / m;
     try {
-      const updated = await recomputeAndSaveGoal(user.id, t, m);
+      const updated = await recomputeAndSaveGoal(user.id, t, monthly, m);
       setGoal(updated);
       setGoalEditOpen(false);
       toast.success("Meta atualizada ✅");
@@ -273,7 +277,6 @@ const Index = () => {
   const resetAll = async () => {
     if (!user || isAdmin) return;
     try {
-      // Delete all contributions
       const ids = contributions.map((c) => c.id);
       if (ids.length) {
         const { error } = await supabase
@@ -285,14 +288,16 @@ const Index = () => {
       setContributions([]);
       const updated = await upsertGoal(user.id, {
         goal_total: 10000,
-        goal_monthly: 500,
+        goal_monthly: 1000,
+        deadline_months: 10,
         amount_saved: 0,
         amount_remaining: 10000,
         progress_percent: 0,
       });
       setGoal(updated);
       setEditTotal("10000");
-      setEditMonthly("500");
+      setEditMonthly("1000");
+      setEditMonths("10");
       toast.success("Tudo zerado! Bora recomeçar 🚀");
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao resetar");
@@ -475,13 +480,19 @@ const Index = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="monthly">Meta mensal (R$)</Label>
+              <Label htmlFor="months">Prazo (meses)</Label>
               <Input
-                id="monthly"
-                inputMode="decimal"
-                value={editMonthly}
-                onChange={(e) => setEditMonthly(e.target.value)}
+                id="months"
+                inputMode="numeric"
+                value={editMonths}
+                onChange={(e) => setEditMonths(e.target.value)}
+                placeholder="Ex: 10"
               />
+            </div>
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Guardando <span className="font-bold text-foreground">{formatBRL(parseFloat(editTotal || "0") / parseInt(editMonths || "1") || 0)}</span> por mês, você atingirá sua meta em <span className="font-bold text-foreground">{editMonths || "0"}</span> meses.
+              </p>
             </div>
           </div>
           <DialogFooter>

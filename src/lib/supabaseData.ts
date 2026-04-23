@@ -84,6 +84,7 @@ export async function recomputeAndSaveGoal(
   userId: string,
   goalTotal: number,
   goalMonthly: number,
+  deadlineMonths?: number,
 ) {
   const { data: rows, error } = await supabase
     .from("contributions")
@@ -96,6 +97,7 @@ export async function recomputeAndSaveGoal(
   return upsertGoal(userId, {
     goal_total: goalTotal,
     goal_monthly: goalMonthly,
+    deadline_months: deadlineMonths,
     amount_saved: saved,
     amount_remaining: remaining,
     progress_percent: pct,

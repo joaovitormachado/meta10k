@@ -70,6 +70,7 @@ export type Database = {
           amount_remaining: number
           amount_saved: number
           created_at: string
+          deadline_months: number
           goal_monthly: number
           goal_total: number
           id: string
@@ -81,6 +82,7 @@ export type Database = {
           amount_remaining?: number
           amount_saved?: number
           created_at?: string
+          deadline_months?: number
           goal_monthly?: number
           goal_total?: number
           id?: string
@@ -92,6 +94,7 @@ export type Database = {
           amount_remaining?: number
           amount_saved?: number
           created_at?: string
+          deadline_months?: number
           goal_monthly?: number
           goal_total?: number
           id?: string

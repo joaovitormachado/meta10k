@@ -27,49 +27,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return localStorage.getItem(MASTER_ADMIN_KEY) !== null;
+  });
 
   useEffect(() => {
-    // Check for master admin session first
-    const adminSession = localStorage.getItem(MASTER_ADMIN_KEY);
-    if (adminSession) {
-      const adminData = JSON.parse(adminSession);
-      setIsAdmin(true);
-      setUser({
-        id: "00000000-0000-0000-0000-000000000000",
-        email: adminData.email,
-        role: "admin",
-        aud: "authenticated",
-        created_at: new Date().toISOString(),
-      } as User);
+    if (isAdmin) {
+      const adminSession = localStorage.getItem(MASTER_ADMIN_KEY);
+      if (adminSession) {
+        const adminData = JSON.parse(adminSession);
+        setUser({
+          id: "00000000-0000-0000-0000-000000000000",
+          email: adminData.email,
+          role: "admin",
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+        } as User);
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
       return;
     }
 
-    // Set up listener for Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (isAdmin) return; // Don't let Supabase override admin state
-      
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        setTimeout(() => {
-          supabase
-            .from("profiles")
-            .select("id, name, email")
-            .eq("id", newSession.user.id)
-            .maybeSingle()
-            .then(({ data }) => setProfile(data));
-        }, 0);
+        supabase
+          .from("profiles")
+          .select("id, name, email")
+          .eq("id", newSession.user.id)
+          .maybeSingle()
+          .then(({ data }) => setProfile(data));
       } else {
         setProfile(null);
       }
     });
 
-    // Then check existing Supabase session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (isAdmin) return;
-      
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
@@ -94,9 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       aud: "authenticated",
       created_at: new Date().toISOString(),
     } as User;
-    
+
     setIsAdmin(true);
     setUser(adminUser);
+    setLoading(false);
     localStorage.setItem(MASTER_ADMIN_KEY, JSON.stringify({ email }));
   };
 

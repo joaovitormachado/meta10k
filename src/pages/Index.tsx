@@ -67,7 +67,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -86,11 +86,26 @@ const Index = () => {
     toast.success("Até logo! 👋");
   };
 
-  const displayName = profile?.name || user?.email?.split("@")[0] || "";
+  const displayName = profile?.name || user?.email?.split("@")[0] || (isAdmin ? "Administrador" : "");
 
   // Initial load
   useEffect(() => {
     if (!user) return;
+    if (isAdmin) {
+      setGoal({
+        id: "admin-placeholder",
+        user_id: user.id,
+        goal_total: 10000,
+        goal_monthly: 500,
+        amount_saved: 0,
+        amount_remaining: 10000,
+        progress_percent: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      setLoading(false);
+      return;
+    }
     let active = true;
     (async () => {
       try {
@@ -183,7 +198,7 @@ const Index = () => {
     date: string,
     source: "salario" | "renda_extra" | "venda" | "outro",
   ) => {
-    if (!user) return;
+    if (!user || isAdmin) return;
     try {
       const created = await insertContribution(user.id, amount, sourceToDb[source], date);
       const next = [created, ...contributions].sort((a, b) =>
@@ -198,7 +213,7 @@ const Index = () => {
   };
 
   const removeDeposit = async (id: string) => {
-    if (!user) return;
+    if (!user || isAdmin) return;
     try {
       await deleteContribution(id);
       setContributions((prev) => prev.filter((c) => c.id !== id));
@@ -210,7 +225,7 @@ const Index = () => {
   };
 
   const saveGoalConfig = async () => {
-    if (!user) return;
+    if (!user || isAdmin) return;
     const t = parseFloat(editTotal.replace(",", "."));
     const m = parseFloat(editMonthly.replace(",", "."));
     if (!t || t <= 0) return toast.error("Meta total inválida");
@@ -228,7 +243,7 @@ const Index = () => {
   const toggleChecklist = async (
     key: keyof WeeklyChecklistState,
   ) => {
-    if (!user) return;
+    if (!user || isAdmin) return;
     const current: WeeklyChecklistState = {
       saved_money: checklist?.saved_money ?? false,
       extra_income: checklist?.extra_income ?? false,
@@ -256,7 +271,7 @@ const Index = () => {
   };
 
   const resetAll = async () => {
-    if (!user) return;
+    if (!user || isAdmin) return;
     try {
       // Delete all contributions
       const ids = contributions.map((c) => c.id);

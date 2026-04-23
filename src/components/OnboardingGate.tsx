@@ -22,7 +22,7 @@ const OnboardingGate = ({ children }: { children: ReactNode }) => {
   // 3. Validação CRÍTICA da Meta
   // Se não houver profile, ou se os campos essenciais forem nulos/vazios/0
   const isGoalMissing = !profile?.goal_name || 
-                        profile?.goal_name.toLowerCase() === "seu objetivo" ||
+                        profile?.goal_name?.toLowerCase() === "seu objetivo" ||
                         !profile?.goal_target_value || 
                         Number(profile.goal_target_value) <= 0;
 

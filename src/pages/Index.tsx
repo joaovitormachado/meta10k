@@ -256,21 +256,26 @@ const Index = () => {
   const resetAll = async () => {
     if (!user || isAdmin) return;
     try {
+      // 1. Apagar contribuições
       await supabase.from("contributions").delete().eq("user_id", user.id);
-      setContributions([]);
-      const updated = await upsertGoal(user.id, {
-        goal_total: 0,
-        goal_monthly: 0,
-        deadline_months: 12,
-        amount_saved: 0,
-        amount_remaining: 0,
-        progress_percent: 0,
-      });
-      setGoal(updated);
-      setEditTotal("0");
-      setEditMonthly("0");
+      
+      // 2. Apagar meta da tabela goals
+      await supabase.from("goals").delete().eq("user_id", user.id);
+      
+      // 3. Limpar perfil para forçar o Onboarding
+      await supabase
+        .from("profiles")
+        .update({ 
+          goal_name: null, 
+          goal_target_value: null, 
+          goal_image_url: null 
+        })
+        .eq("id", user.id);
+
       toast.success("Tudo zerado!");
-      window.location.reload(); // Force refresh to re-gate
+      
+      // Recarregar a página forçará o OnboardingGate a rodar novamente
+      window.location.reload();
     } catch (e: any) {
       toast.error("Erro ao resetar");
     }

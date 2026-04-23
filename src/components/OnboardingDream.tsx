@@ -32,7 +32,7 @@ const GOAL_TYPES = [
   { id: "status", label: "Conquista", icon: Zap, desc: "Realizar um grande desejo pessoal" },
 ];
 
-const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
+export default function Onboarding({ userId, onComplete }: OnboardingProps) {
   const [step, setStep] = useState(1);
   const [goalName, setGoalName] = useState("");
   const [goalValue, setGoalValue] = useState("");
@@ -42,7 +42,7 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
 
-  const searchImage = async () => {
+  async function searchImage() {
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
@@ -54,9 +54,9 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
     } finally {
       setSearching(false);
     }
-  };
+  }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -65,9 +65,9 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
       };
       reader.readAsDataURL(file);
     }
-  };
+  }
 
-  const saveProfile = async () => {
+  async function saveProfile() {
     setLoading(true);
     try {
       const numericValue = parseFloat(goalValue.replace(/\./g, "").replace(",", "."));
@@ -75,7 +75,6 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
 
       const finalImage = goalImage || `https://source.unsplash.com/1600x900/?${encodeURIComponent(goalName)}`;
       
-      // UPSERT Profile - ensures record exists and is updated
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert({
@@ -89,7 +88,6 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
 
       if (profileError) throw profileError;
 
-      // UPSERT Goal - consistency for dashboard calculations
       const { error: goalError } = await supabase
         .from("goals")
         .upsert({
@@ -113,7 +111,7 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background flex items-center justify-center p-4">
@@ -297,11 +295,11 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
           )}
 
           <div className="flex justify-center gap-2 pt-4">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4].map((stepIndex) => (
               <div
-                key={s}
+                key={stepIndex}
                 className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  s === step ? "bg-primary w-8" : s < step ? "bg-primary/60" : "bg-muted"
+                  stepIndex === step ? "bg-primary w-8" : stepIndex < step ? "bg-primary/60" : "bg-muted"
                 }`}
               />
             ))}
@@ -310,6 +308,4 @@ const Onboarding = ({ userId, onComplete }: OnboardingProps) => {
       </Card>
     </div>
   );
-};
-
-export default Onboarding;
+}

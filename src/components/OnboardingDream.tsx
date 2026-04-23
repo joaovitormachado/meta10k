@@ -25,15 +25,8 @@ const COMMON_GOALS = [
   "Lua de mel",
 ];
 
-const GOAL_TYPES = [
-  { id: "liberdade", label: "Liberdade", icon: Sparkles, desc: "Independência e novas experiências" },
-  { id: "seguranca", label: "Segurança", icon: Shield, desc: "Tranquilidade para sua família" },
-  { id: "conforto", label: "Conforto", icon: Heart, desc: "Melhorar sua qualidade de vida" },
-  { id: "status", label: "Conquista", icon: Zap, desc: "Realizar um grande desejo pessoal" },
-];
-
 export default function Onboarding({ userId, onComplete }: OnboardingProps) {
-  const [step, setStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [goalName, setGoalName] = useState("");
   const [goalValue, setGoalValue] = useState("");
   const [goalType, setGoalType] = useState("");
@@ -41,6 +34,13 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
+
+  const GOAL_TYPES = [
+    { id: "liberdade", label: "Liberdade", icon: Sparkles, desc: "Independência e novas experiências" },
+    { id: "seguranca", label: "Segurança", icon: Shield, desc: "Tranquilidade para sua família" },
+    { id: "conforto", label: "Conforto", icon: Heart, desc: "Melhorar sua qualidade de vida" },
+    { id: "status", label: "Conquista", icon: Zap, desc: "Realizar um grande desejo pessoal" },
+  ];
 
   async function searchImage() {
     if (!searchQuery.trim()) return;
@@ -124,14 +124,14 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
               <Sparkles className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="font-display text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {step === 1 ? "Qual é o seu sonho?" : 
-               step === 2 ? "Quanto custa?" : 
-               step === 3 ? "O que esse sonho representa?" : 
+              {currentStep === 1 ? "Qual é o seu sonho?" : 
+               currentStep === 2 ? "Quanto custa?" : 
+               currentStep === 3 ? "O que esse sonho representa?" : 
                "Visualize sua conquista"}
             </h1>
           </div>
 
-          {step === 1 && (
+          {currentStep === 1 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
               <div className="space-y-3">
                 <Label htmlFor="goal" className="text-lg font-medium">O que você quer conquistar?</Label>
@@ -164,7 +164,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
               </div>
 
               <Button
-                onClick={() => goalName && setStep(2)}
+                onClick={() => goalName && setCurrentStep(2)}
                 className="w-full h-12 text-lg gradient-primary shadow-lg hover:shadow-xl transition-all"
                 disabled={!goalName}
               >
@@ -173,7 +173,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
             </div>
           )}
 
-          {step === 2 && (
+          {currentStep === 2 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
               <div className="space-y-3">
                 <Label htmlFor="value" className="text-lg font-medium">Qual o valor necessário?</Label>
@@ -199,9 +199,9 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={() => setStep(1)} variant="outline" className="flex-1 h-12">Voltar</Button>
+                <Button onClick={() => setCurrentStep(1)} variant="outline" className="flex-1 h-12">Voltar</Button>
                 <Button
-                  onClick={() => goalValue && setStep(3)}
+                  onClick={() => goalValue && setCurrentStep(3)}
                   className="flex-1 h-12 gradient-primary shadow-lg"
                   disabled={!goalValue}
                 >
@@ -211,7 +211,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
             </div>
           )}
 
-          {step === 3 && (
+          {currentStep === 3 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
               <Label className="text-lg font-medium">Este objetivo trará mais...</Label>
               <div className="grid grid-cols-1 gap-3">
@@ -237,9 +237,9 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={() => setStep(2)} variant="outline" className="flex-1 h-12">Voltar</Button>
+                <Button onClick={() => setCurrentStep(2)} variant="outline" className="flex-1 h-12">Voltar</Button>
                 <Button
-                  onClick={() => goalType && setStep(4)}
+                  onClick={() => goalType && setCurrentStep(4)}
                   className="flex-1 h-12 gradient-primary shadow-lg"
                   disabled={!goalType}
                 >
@@ -249,7 +249,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
             </div>
           )}
 
-          {step === 4 && (
+          {currentStep === 4 && (
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
               <div className="space-y-3">
                 <Label className="text-lg font-medium">Visualize sua conquista</Label>
@@ -282,7 +282,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={() => setStep(3)} variant="outline" className="flex-1 h-12">Voltar</Button>
+                <Button onClick={() => setCurrentStep(3)} variant="outline" className="flex-1 h-12">Voltar</Button>
                 <Button
                   onClick={saveProfile}
                   className="flex-1 h-12 gradient-primary shadow-lg"
@@ -299,7 +299,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
               <div
                 key={stepIndex}
                 className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  stepIndex === step ? "bg-primary w-8" : stepIndex < step ? "bg-primary/60" : "bg-muted"
+                  stepIndex === currentStep ? "bg-primary w-8" : stepIndex < currentStep ? "bg-primary/60" : "bg-muted"
                 }`}
               />
             ))}

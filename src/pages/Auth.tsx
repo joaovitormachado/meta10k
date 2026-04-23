@@ -24,8 +24,8 @@ const Auth = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      if (user.id === "master-admin") {
-        navigate("/admin", { replace: true });
+      if (user.id === "00000000-0000-0000-0000-000000000000") {
+        navigate("/", { replace: true });
       } else {
         navigate("/", { replace: true });
       }
@@ -35,12 +35,11 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Master Admin Login check (bypasses Zod for non-standard admin email)
     if (email === "admin@admin" && password === "Abacaxi123") {
       setLoading(true);
       signInAsAdmin(email);
       toast.success("Bem-vindo, Administrador! 🔐");
-      navigate("/admin", { replace: true });
+      navigate("/", { replace: true });
       setLoading(false);
       return;
     }

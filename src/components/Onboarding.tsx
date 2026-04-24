@@ -260,7 +260,7 @@ const Onboarding = ({ open, onComplete }: Props) => {
               onClick={finish}
               className="gradient-primary text-primary-foreground"
             >
-              Começar minha jornada 🚀
+              Finalizar minha jornada 🚀
             </Button>
           )}
         </DialogFooter>

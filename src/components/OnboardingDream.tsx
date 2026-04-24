@@ -260,7 +260,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                        <p className="text-white font-bold text-lg">{goalName}</p>
-                       <Button onClick={() => setGoalImage("")} variant="destructive" size="sm">Trocar</Button>
+                       <Button onClick={() => setGoalImage("")} variant="destructive" size="sm">Trocar imagem</Button>
                     </div>
                   </div>
                 ) : (
@@ -288,7 +288,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
                   className="flex-1 h-12 gradient-primary shadow-lg"
                   disabled={loading}
                 >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Começar Jornada <Sparkles className="w-5 h-5 ml-2" /></>}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Finalizar <Sparkles className="w-5 h-5 ml-2" /></>}
                 </Button>
               </div>
             </div>

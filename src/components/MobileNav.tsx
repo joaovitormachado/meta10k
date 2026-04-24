@@ -1,4 +1,4 @@
-import { Home, Plus, Settings2, ShieldCheck, LogOut } from "lucide-react";
+import { Home, Plus, Settings2, ShieldCheck, LogOut, RotateCcw, Trophy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 

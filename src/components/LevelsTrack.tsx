@@ -9,17 +9,17 @@ interface Props {
 }
 
 const getPersonalizedLevels = (goal: number) => {
-  const percentages = [10, 25, 50, 75, 100];
+  const percentages = [10, 25, 50, 100];
   return percentages.map((pct) => ({
     value: (pct / 100) * goal,
-    label: pct === 100 ? "Conquista" : pct === 75 ? "Quase lá" : pct === 50 ? "Metade" : pct === 25 ? "Um quarto" : "Início",
-    emoji: pct === 100 ? "🏆" : pct === 75 ? "🔥" : pct === 50 ? "⚡" : pct === 25 ? "🌱" : "🌱"
+    label: pct === 100 ? "Conquista" : pct === 50 ? "Metade" : pct === 25 ? "Um quarto" : "Início",
+    emoji: pct === 100 ? "🏆" : pct === 50 ? "⚡" : pct === 25 ? "🌱" : "✨"
   }));
 };
 
 const LevelsTrack = ({ saved, goal, goalName }: Props) => {
   const personalizedLevels = getPersonalizedLevels(goal);
-  const percentages = [10, 25, 50, 75, 100];
+  const percentages = [10, 25, 50, 100];
   const nextPercent = percentages.find(p => (saved / goal) * 100 < p);
   const nextValue = nextPercent ? (nextPercent / 100) * goal : null;
 
@@ -45,7 +45,7 @@ const LevelsTrack = ({ saved, goal, goalName }: Props) => {
           }}
         />
 
-        <ol className="relative flex justify-between min-w-[500px] md:min-w-0 md:grid md:grid-cols-5 gap-1">
+        <ol className="relative flex justify-between min-w-[400px] md:min-w-0 md:grid md:grid-cols-4 gap-1">
           {personalizedLevels.map((lvl, i) => {
             const reached = saved >= lvl.value;
             return (

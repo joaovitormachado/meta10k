@@ -114,21 +114,34 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg shadow-2xl border-0 overflow-hidden">
-        <div className="bg-gradient-to-r from-primary via-primary/90 to-accent h-2" />
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-background to-background flex items-center justify-center p-4">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+      </div>
+
+      <Card className="w-full max-w-lg shadow-2xl border-border/50 bg-card/80 backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in duration-500">
+        <div className="bg-gradient-to-r from-primary via-accent to-primary h-1.5 animate-pulse" />
         
-        <CardContent className="p-8 space-y-8">
-          <div className="text-center space-y-2">
-            <div className="mx-auto w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
-              <Sparkles className="w-8 h-8 text-primary-foreground" />
+        <CardContent className="p-8 md:p-10 space-y-8">
+          <div className="text-center space-y-3">
+            <div className="mx-auto w-20 h-20 rounded-[2rem] gradient-primary flex items-center justify-center shadow-glow animate-bounce-slow">
+              <Sparkles className="w-10 h-10 text-primary-foreground" />
             </div>
-            <h1 className="font-display text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {currentStep === 1 ? "Qual é o seu sonho?" : 
-               currentStep === 2 ? "Quanto custa?" : 
-               currentStep === 3 ? "O que esse sonho representa?" : 
-               "Visualize sua conquista"}
-            </h1>
+            <div className="space-y-1">
+              <h1 className="font-display text-3xl md:text-4xl font-black tracking-tight text-foreground">
+                {currentStep === 1 ? "Qual o seu objetivo?" : 
+                 currentStep === 2 ? "Quanto você precisa?" : 
+                 currentStep === 3 ? "Qual o seu motivo?" : 
+                 "Visualize o sucesso"}
+              </h1>
+              <p className="text-muted-foreground text-sm font-medium">
+                {currentStep === 1 ? "Dê um nome para o seu grande sonho" : 
+                 currentStep === 2 ? "Defina o valor total da sua conquista" : 
+                 currentStep === 3 ? "O que essa meta significa para você?" : 
+                 "Uma imagem vale mais que mil palavras"}
+              </p>
+            </div>
           </div>
 
           {currentStep === 1 && (
@@ -288,7 +301,7 @@ export default function Onboarding({ userId, onComplete }: OnboardingProps) {
                   className="flex-1 h-12 gradient-primary shadow-lg"
                   disabled={loading}
                 >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Finalizar <Sparkles className="w-5 h-5 ml-2" /></>}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Começar minha jornada <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
               </div>
             </div>

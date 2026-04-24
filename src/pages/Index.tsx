@@ -80,6 +80,7 @@ const Index = () => {
   // Goal editor dialog
   const [goalEditOpen, setGoalEditOpen] = useState(false);
   const [mobileAddOpen, setMobileAddOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("home");
   const [editTotal, setEditTotal] = useState("");
   const [editMonthly, setEditMonthly] = useState("");
   const [editMonths, setEditMonths] = useState("12");
@@ -393,101 +394,137 @@ const Index = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-6 pb-32 md:pb-10">
-        {/* HERO PERSONALIZADO */}
-        <section className="space-y-4">
-          <ProgressHeroPersonalized
-            saved={saved}
-            goal={goalTotal}
-            goalName={goalName}
-            goalImage={goalImage}
-            goalMonthly={goalMonthly}
-            weeklyProgress={stats.weeklyProgress}
-            daysLeft={stats.monthsLeft}
-          />
-          <div className="hidden md:block">
-            <AddDepositDialog onAdd={addDeposit} />
-          </div>
-        </section>
+        {/* MOBILE TABS VS DESKTOP GRID */}
+        
+        {/* HOME TAB */}
+        {(activeTab === "home" || !window.matchMedia("(max-width: 768px)").matches) && (
+          <>
+            {/* HERO PERSONALIZADO */}
+            <section className="space-y-4">
+              <ProgressHeroPersonalized
+                saved={saved}
+                goal={goalTotal}
+                goalName={goalName}
+                goalImage={goalImage}
+                goalMonthly={goalMonthly}
+                weeklyProgress={stats.weeklyProgress}
+                daysLeft={stats.monthsLeft}
+              />
+              <div className="hidden md:block">
+                <AddDepositDialog onAdd={addDeposit} />
+              </div>
+            </section>
 
-        {/* ALERTAS INTELIGENTES */}
-        {!isAdmin && (
-          <SmartAlerts
-            saved={saved}
-            goal={goalTotal}
-            goalMonthly={goalMonthly}
-            contributions={contributions.map(c => ({ amount: Number(c.amount), date: c.date }))}
-            daysSinceStart={stats.daysSinceStart}
-            dailyAvg={stats.dailyAvg}
-            monthsLeft={stats.monthsLeft}
-          />
+            {/* ALERTAS INTELIGENTES */}
+            {!isAdmin && (
+              <SmartAlerts
+                saved={saved}
+                goal={goalTotal}
+                goalMonthly={goalMonthly}
+                contributions={contributions.map(c => ({ amount: Number(c.amount), date: c.date }))}
+                daysSinceStart={stats.daysSinceStart}
+                dailyAvg={stats.dailyAvg}
+                monthsLeft={stats.monthsLeft}
+              />
+            )}
+
+            {/* SUGESTOES INTELIGENTES */}
+            {!isAdmin && (
+              <SmartSuggestions
+                saved={saved}
+                goal={goalTotal}
+                goalMonthly={goalMonthly}
+                dailyAvg={stats.dailyAvg}
+                remaining={stats.remaining}
+              />
+            )}
+
+            {/* NÍVEIS */}
+            <LevelsTrack saved={saved} goal={goalTotal} goalName={goalName} />
+
+            {/* STATS */}
+            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              <StatCard
+                label="Falta"
+                value={formatBRL(stats.remaining)}
+                icon={Target}
+                accent="primary"
+                hint={
+                  stats.monthsLeft
+                    ? `≈ ${stats.monthsLeft} ${stats.monthsLeft === 1 ? "mês" : "meses"}`
+                    : undefined
+                }
+              />
+              <StatCard
+                label="Meta semanal"
+                value={formatBRL(stats.weeklyTarget)}
+                icon={CalendarDays}
+                accent="gold"
+                hint={`≈ ${formatBRL(stats.dailyTarget)}/dia`}
+              />
+              <StatCard
+                label="Meta mensal"
+                value={formatBRL(stats.monthlyTarget)}
+                icon={TrendingUp}
+                accent="primary"
+                hint="ritmo necessário"
+              />
+              <StatCard
+                label="Sequência"
+                value={`${stats.streak} ${stats.streak === 1 ? "dia" : "dias"}`}
+                icon={Flame}
+                accent="gold"
+              />
+            </section>
+
+            {/* AÇÃO + CHECKLIST */}
+            <section className="grid lg:grid-cols-2 gap-4 md:gap-6">
+              <DailyActions />
+              <DailyChecklistCard value={checklistValue} onToggle={toggleChecklist} />
+            </section>
+          </>
         )}
 
-        {/* SUGESTOES INTELIGENTES */}
-        {!isAdmin && (
-          <SmartSuggestions
-            saved={saved}
-            goal={goalTotal}
-            goalMonthly={goalMonthly}
-            dailyAvg={stats.dailyAvg}
-            remaining={stats.remaining}
-          />
+        {/* HISTORY TAB */}
+        {(activeTab === "history" || !window.matchMedia("(max-width: 768px)").matches) && (
+          <section className="grid lg:grid-cols-2 gap-4 md:gap-6">
+            <EvolutionChart deposits={deposits} goal={goalTotal} />
+            <DepositList deposits={deposits} onRemove={removeDeposit} />
+          </section>
         )}
 
-        {/* NÍVEIS */}
-        <LevelsTrack saved={saved} goal={goalTotal} goalName={goalName} />
+        {/* CHALLENGES TAB */}
+        {(activeTab === "challenges" || !window.matchMedia("(max-width: 768px)").matches) && (
+          <section className="grid lg:grid-cols-2 gap-4 md:gap-6">
+            <FirstResults deposits={deposits} />
+            <Challenge7Days />
+          </section>
+        )}
 
-        {/* STATS */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <StatCard
-            label="Falta"
-            value={formatBRL(stats.remaining)}
-            icon={Target}
-            accent="primary"
-            hint={
-              stats.monthsLeft
-                ? `≈ ${stats.monthsLeft} ${stats.monthsLeft === 1 ? "mês" : "meses"}`
-                : undefined
-            }
-          />
-          <StatCard
-            label="Meta semanal"
-            value={formatBRL(stats.weeklyTarget)}
-            icon={CalendarDays}
-            accent="gold"
-            hint={`≈ ${formatBRL(stats.dailyTarget)}/dia`}
-          />
-          <StatCard
-            label="Meta mensal"
-            value={formatBRL(stats.monthlyTarget)}
-            icon={TrendingUp}
-            accent="primary"
-            hint="ritmo necessário"
-          />
-          <StatCard
-            label="Sequência"
-            value={`${stats.streak} ${stats.streak === 1 ? "dia" : "dias"}`}
-            icon={Flame}
-            accent="gold"
-          />
-        </section>
-
-        {/* AÇÃO + CHECKLIST */}
-        <section className="grid lg:grid-cols-2 gap-4 md:gap-6">
-          <DailyActions />
-          <DailyChecklistCard value={checklistValue} onToggle={toggleChecklist} />
-        </section>
-
-        {/* RESULTADO + DESAFIO */}
-        <section className="grid lg:grid-cols-2 gap-4 md:gap-6">
-          <FirstResults deposits={deposits} />
-          <Challenge7Days />
-        </section>
-
-        {/* EVOLUÇÃO + HISTÓRICO */}
-        <section className="grid lg:grid-cols-2 gap-4 md:gap-6">
-          <EvolutionChart deposits={deposits} goal={goalTotal} />
-          <DepositList deposits={deposits} onRemove={removeDeposit} />
-        </section>
+        {/* PROFILE TAB (Mobile Only usually, or just Profile settings) */}
+        {activeTab === "profile" && (
+          <section className="space-y-4 md:hidden">
+            <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+              <h2 className="text-xl font-bold mb-4">Configurações</h2>
+              <div className="space-y-3">
+                <Button variant="outline" className="w-full justify-start gap-3" onClick={() => setGoalEditOpen(true)}>
+                  <Settings2 className="w-5 h-5" /> Ajustar minha meta
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-3 text-destructive" onClick={handleLogout}>
+                  <LogOut className="w-5 h-5" /> Sair da conta
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+              <h2 className="text-xl font-bold mb-4">Sobre o Sistema 10K</h2>
+              <p className="text-sm text-muted-foreground">
+                Sua ferramenta definitiva para alcançar os primeiros R$ 10.000 guardados. 
+                Mantenha a constância e seu sonho será realidade.
+              </p>
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Goal edit dialog */}
@@ -531,9 +568,9 @@ const Index = () => {
       </Dialog>
 
       <MobileNav 
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         onAddClick={() => setMobileAddOpen(true)}
-        onSettingsClick={() => setGoalEditOpen(true)}
-        onLogoutClick={handleLogout}
       />
 
       <AddDepositDialog 

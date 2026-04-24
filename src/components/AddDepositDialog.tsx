@@ -64,7 +64,7 @@ const AddDepositDialog = ({ onAdd, open: externalOpen, onOpenChange: setExternal
           className="w-full h-16 text-lg font-bold gradient-primary text-primary-foreground shadow-glow hover:shadow-elegant transition-smooth"
         >
           <Plus className="w-6 h-6 mr-2" />
-          Adicionar valor
+          Adicionar aporte
         </Button>
       )}
 

@@ -87,14 +87,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      if (currentSession?.user) {
         supabase
           .from("profiles")
           .select("id, name, email, goal_name, goal_image, goal_target_value, goal_image_url, goal_type")
-          .eq("id", s.user.id)
+          .eq("id", currentSession.user.id)
           .maybeSingle()
           .then(({ data }) => {
             setProfile(data);

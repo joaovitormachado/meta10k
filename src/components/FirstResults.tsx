@@ -9,8 +9,8 @@ interface Props {
 const FirstResults = ({ deposits }: Props) => {
   const extra = deposits
     .filter((d) => d.source && d.source !== "salario")
-    .reduce((s, d) => s + d.amount, 0);
-  const total = deposits.reduce((s, d) => s + d.amount, 0);
+    .reduce((sum, d) => sum + d.amount, 0);
+  const total = deposits.reduce((sum, d) => sum + d.amount, 0);
 
   return (
     <Card className="p-6 gradient-card shadow-soft border-border/60">

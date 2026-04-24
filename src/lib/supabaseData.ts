@@ -91,7 +91,7 @@ export async function recomputeAndSaveGoal(
     .select("amount")
     .eq("user_id", userId);
   if (error) throw error;
-  const saved = (rows ?? []).reduce((s, r) => s + Number(r.amount), 0);
+  const saved = (rows ?? []).reduce((acc, r) => acc + Number(r.amount), 0);
   const remaining = Math.max(0, goalTotal - saved);
   const pct = goalTotal > 0 ? Math.min(100, (saved / goalTotal) * 100) : 0;
   return upsertGoal(userId, {

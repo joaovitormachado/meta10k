@@ -77,7 +77,7 @@ const ProgressHeroPersonalized = ({ saved, goal, goalName, goalImage, goalMonthl
                 <Sparkles className="w-6 h-6 text-accent" />
               )}
               <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-                TESTE DE ATUALIZAÇÃO APLICADO
+                {goalName || "Seu objetivo"}
               </h2>
             </div>
             <p className={`text-lg font-medium ${reached ? "text-yellow-400" : "text-accent"}`}>

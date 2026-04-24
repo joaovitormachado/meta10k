@@ -28,7 +28,7 @@ const SmartAlerts = ({ saved, goal, goalMonthly, contributions, daysSinceStart, 
       const valueForMarco = (nextMarco / 100) * goal;
       const diffForMarco = valueForMarco - saved;
       if (diffForMarco <= remaining * 0.1) {
-        alerts.push({
+        newAlerts.push({
           type: "success",
           icon: <Star className="w-4 h-4" />,
           message: `Você está a ${formatBRL(diffForMarco)} do marco ${nextMarco}%!`,
@@ -44,7 +44,7 @@ const SmartAlerts = ({ saved, goal, goalMonthly, contributions, daysSinceStart, 
       .reduce((sum, c) => sum + c.amount, 0);
 
     if (weeklyTotal >= goalMonthly / 4) {
-      alerts.push({
+      newAlerts.push({
         type: "success",
         icon: <Zap className="w-4 h-4" />,
         message: `Incrível! Você já guardou ${formatBRL(weeklyTotal)} essa semana!`,
@@ -53,7 +53,7 @@ const SmartAlerts = ({ saved, goal, goalMonthly, contributions, daysSinceStart, 
       const weeklyTarget = goalMonthly / 4;
       const weeklyRemaining = weeklyTarget - weeklyTotal;
       if (weeklyRemaining > 0) {
-        alerts.push({
+        newAlerts.push({
           type: "warning",
           icon: <Target className="w-4 h-4" />,
           message: `Guarda ${formatBRL(weeklyRemaining)} essa semana para manter o ritmo!`,
@@ -63,7 +63,7 @@ const SmartAlerts = ({ saved, goal, goalMonthly, contributions, daysSinceStart, 
 
     // Projection
     if (monthsLeft > 0 && monthsLeft <= 3) {
-      alerts.push({
+      newAlerts.push({
         type: "info",
         icon: <Clock className="w-4 h-4" />,
         message: `Só mais ${monthsLeft} ${monthsLeft === 1 ? "mês" : "meses"}! Continue assim!`,
@@ -74,7 +74,7 @@ const SmartAlerts = ({ saved, goal, goalMonthly, contributions, daysSinceStart, 
     if (dailyAvg > 0 && daysSinceStart > 7) {
       const projectedMonths = remaining / (dailyAvg * 30);
       if (projectedMonths < monthsLeft && projectedMonths > 0) {
-        alerts.push({
+        newAlerts.push({
           type: "success",
           icon: <TrendingUp className="w-4 h-4" />,
           message: `No seu ritmo atual, você chega lá em ${Math.ceil(projectedMonths)} meses!`,
@@ -201,21 +201,21 @@ const SmartSuggestions = ({ saved, goal, goalMonthly, dailyAvg, remaining }: Sma
       </div>
 
       <div className="space-y-3">
-        {suggestions.map((s, index) => (
+        {suggestions.map((suggestion, index) => (
           <div
             key={index}
             className="flex items-center gap-4 p-3 rounded-xl bg-background/60 border border-border/60 hover:border-primary/30 transition-colors cursor-pointer"
           >
             <div className="p-2 rounded-full bg-primary/10 text-primary">
-              {s.icon}
+              {suggestion.icon}
             </div>
             <div className="flex-1">
-              <p className="font-medium text-sm">{s.title}</p>
-              <p className="text-xs text-muted-foreground">{s.impact}</p>
+              <p className="font-medium text-sm">{suggestion.title}</p>
+              <p className="text-xs text-muted-foreground">{suggestion.impact}</p>
             </div>
-            {s.savings && (
+            {suggestion.savings && (
               <div className="text-right">
-                <p className="text-sm font-bold text-primary">{formatBRL(s.savings)}</p>
+                <p className="text-sm font-bold text-primary">{formatBRL(suggestion.savings)}</p>
               </div>
             )}
           </div>

@@ -21,10 +21,10 @@ const ACTIONS = [
 const pickThree = (seed: number) => {
   const arr = [...ACTIONS];
   const out: string[] = [];
-  let s = seed;
+  let localSeed = seed;
   for (let i = 0; i < 3 && arr.length; i++) {
-    s = (s * 9301 + 49297) % 233280;
-    const idx = Math.floor((s / 233280) * arr.length);
+    localSeed = (localSeed * 9301 + 49297) % 233280;
+    const idx = Math.floor((localSeed / 233280) * arr.length);
     out.push(arr.splice(idx, 1)[0]);
   }
   return out;

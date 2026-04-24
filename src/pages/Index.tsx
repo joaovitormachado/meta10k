@@ -132,17 +132,17 @@ const Index = () => {
   // Map DB contributions → UI Deposit shape
   const deposits: Deposit[] = useMemo(
     () =>
-      contributions.map((c) => ({
-        id: c.id,
-        amount: Number(c.amount),
-        date: c.date,
-        source: sourceFromDb[c.source],
+      contributions.map((row) => ({
+        id: row.id,
+        amount: Number(row.amount),
+        date: row.date,
+        source: sourceFromDb[row.source],
       })),
     [contributions],
   );
 
   // Goal calculations
-  const saved = (contributions ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
+  const saved = (contributions ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
   
   const stats = useMemo(() => {
     const remaining = Math.max(0, goalTotal - saved);
@@ -159,13 +159,37 @@ const Index = () => {
     const thisWeekStart = new Date();
     thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
     const weeklyProgress = contributions
-      .filter(c => new Date(c.date) >= thisWeekStart)
-      .reduce((sum, c) => sum + Number(c.amount), 0);
+      .filter(row => new Date(row.date) >= thisWeekStart)
+      .reduce((sum, row) => sum + Number(row.amount), 0);
 
     const dailyTarget = goalMonthly / 30;
     const weeklyTarget = goalMonthly / 4;
 
     const monthsLeft = goalMonthly > 0 ? Math.ceil(remaining / goalMonthly) : 0;
+
+    // Calculate streak
+    let streak = 0;
+    if (contributions.length > 0) {
+      const dates = Array.from(new Set(contributions.map(row => row.date.split("T")[0]))).sort().reverse();
+      const todayStr = new Date().toISOString().split("T")[0];
+      let checkDate = new Date(todayStr);
+      
+      // If no contribution today, check if there was one yesterday to keep the streak alive
+      const hasToday = dates.includes(todayStr);
+      if (!hasToday) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      
+      for (const dateStr of dates) {
+        const dStr = checkDate.toISOString().split("T")[0];
+        if (dates.includes(dStr)) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+    }
 
     return {
       remaining,
@@ -176,6 +200,7 @@ const Index = () => {
       dailyAvg,
       weeklyProgress,
       daysSinceStart,
+      streak,
     };
   }, [contributions, saved, goalTotal, goalMonthly]);
 

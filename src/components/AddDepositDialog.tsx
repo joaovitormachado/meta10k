@@ -15,12 +15,17 @@ import { toast } from "sonner";
 
 interface Props {
   onAdd: (amount: number, note: string, date: string, source: DepositSource) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }
 
 const QUICK = [50, 100, 250, 500];
 
-const AddDepositDialog = ({ onAdd }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AddDepositDialog = ({ onAdd, open: externalOpen, onOpenChange: setExternalOpen, showTrigger = true }: Props) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [source, setSource] = useState<DepositSource>("salario");
@@ -52,14 +57,16 @@ const AddDepositDialog = ({ onAdd }: Props) => {
 
   return (
     <>
-      <Button
-        size="lg"
-        onClick={() => setIsOpen(true)}
-        className="w-full h-16 text-lg font-bold gradient-primary text-primary-foreground shadow-glow hover:shadow-elegant transition-smooth"
-      >
-        <Plus className="w-6 h-6 mr-2" />
-        Adicionar valor
-      </Button>
+      {showTrigger && (
+        <Button
+          size="lg"
+          onClick={() => setIsOpen(true)}
+          className="w-full h-16 text-lg font-bold gradient-primary text-primary-foreground shadow-glow hover:shadow-elegant transition-smooth"
+        >
+          <Plus className="w-6 h-6 mr-2" />
+          Adicionar valor
+        </Button>
+      )}
 
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">

@@ -60,7 +60,7 @@ const ProgressHeroPersonalized = ({ saved, goal, goalName, goalImage, goalMonthl
       {/* Gradient fallback */}
       {!goalImage && <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-accent z-0" />}
 
-      <div className={`relative z-10 p-8 md:p-12 ${loaded ? "animate-in fade-in duration-500" : ""}`}>
+      <div className={`relative z-10 p-5 md:p-12 ${loaded ? "animate-in fade-in duration-500" : ""}`}>
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-32 -left-10 w-72 h-72 rounded-full bg-accent/20 blur-3xl" />
 
@@ -76,22 +76,22 @@ const ProgressHeroPersonalized = ({ saved, goal, goalName, goalImage, goalMonthl
               ) : (
                 <Sparkles className="w-6 h-6 text-accent" />
               )}
-              <h2 className="font-display text-2xl md:text-3xl font-extrabold">
+              <h2 className="font-display text-xl md:text-3xl font-extrabold truncate">
                 {goalName || "Seu objetivo"}
               </h2>
             </div>
-            <p className={`text-lg font-medium ${reached ? "text-yellow-400" : "text-accent"}`}>
+            <p className={`text-sm md:text-lg font-medium ${reached ? "text-yellow-400" : "text-accent"}`}>
               {message}
             </p>
           </div>
 
           {/* Main Stats */}
           <div className="space-y-4">
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <h1 className="font-display text-5xl md:text-7xl font-extrabold tracking-tight text-foreground">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <h1 className="font-display text-4xl md:text-7xl font-extrabold tracking-tight text-foreground">
                 {formatBRL(saved)}
               </h1>
-              <span className="text-xl md:text-2xl opacity-80 font-medium">
+              <span className="text-base md:text-2xl opacity-80 font-medium">
                 de {formatBRL(goal)}
               </span>
             </div>

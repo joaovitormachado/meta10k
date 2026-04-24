@@ -30,6 +30,7 @@ import EvolutionChart from "@/components/EvolutionChart";
 import MotivationBanner from "@/components/MotivationBanner";
 import FirstResults from "@/components/FirstResults";
 import { SmartAlerts, SmartSuggestions } from "@/components/SmartAlerts";
+import MobileNav from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -78,6 +79,7 @@ const Index = () => {
 
   // Goal editor dialog
   const [goalEditOpen, setGoalEditOpen] = useState(false);
+  const [mobileAddOpen, setMobileAddOpen] = useState(false);
   const [editTotal, setEditTotal] = useState("");
   const [editMonthly, setEditMonthly] = useState("");
   const [editMonths, setEditMonths] = useState("12");
@@ -353,7 +355,7 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="hidden sm:flex text-muted-foreground hover:text-destructive"
                   aria-label="Resetar"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -380,7 +382,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground"
+              className="hidden sm:flex text-muted-foreground hover:text-foreground"
               aria-label="Sair"
               onClick={handleLogout}
             >
@@ -390,7 +392,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-6 pb-32 md:pb-10">
         {/* HERO PERSONALIZADO */}
         <section className="space-y-4">
           <ProgressHeroPersonalized
@@ -402,7 +404,9 @@ const Index = () => {
             weeklyProgress={stats.weeklyProgress}
             daysLeft={stats.monthsLeft}
           />
-          <AddDepositDialog onAdd={addDeposit} />
+          <div className="hidden md:block">
+            <AddDepositDialog onAdd={addDeposit} />
+          </div>
         </section>
 
         {/* ALERTAS INTELIGENTES */}
@@ -525,6 +529,19 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MobileNav 
+        onAddClick={() => setMobileAddOpen(true)}
+        onSettingsClick={() => setGoalEditOpen(true)}
+        onLogoutClick={handleLogout}
+      />
+
+      <AddDepositDialog 
+        onAdd={addDeposit} 
+        open={mobileAddOpen} 
+        onOpenChange={setMobileAddOpen} 
+        showTrigger={false}
+      />
     </div>
   );
 };

@@ -36,7 +36,7 @@ const LevelsTrack = ({ saved, goal, goalName }: Props) => {
         </div>
       </div>
 
-      <div className="relative">
+      <div className="relative overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none">
         <div className="absolute top-5 left-0 right-0 h-1.5 bg-muted rounded-full" />
         <div
           className="absolute top-5 left-0 h-1.5 gradient-primary rounded-full transition-all duration-700"
@@ -45,11 +45,11 @@ const LevelsTrack = ({ saved, goal, goalName }: Props) => {
           }}
         />
 
-        <ol className="relative grid grid-cols-5 gap-1">
+        <ol className="relative flex justify-between min-w-[500px] md:min-w-0 md:grid md:grid-cols-5 gap-1">
           {personalizedLevels.map((lvl, i) => {
             const reached = saved >= lvl.value;
             return (
-              <li key={i} className="flex flex-col items-center text-center">
+              <li key={i} className="flex flex-col items-center text-center px-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-bold border-2 transition-smooth z-10 ${
                     reached
